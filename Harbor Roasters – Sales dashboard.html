@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harbor Roasters – Sales dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e9eeea; --panel:#f8faf7; --ink:#17302b; --muted:#5d716b; --line:#cfd9d3;
+  --side:#17302b; --side-ink:#d9e6df; --accent:#e8a317; --blue:#2f5d8a; --green:#2e8b57; --red:#c0392b;
+  --font:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1c19;--panel:#172723;--ink:#e6efe9;--muted:#93a8a0;--line:#274039;--side:#0a1412;--side-ink:#b9cfc5;--blue:#6aa3d6;--green:#4fc08a;--red:#ef7b6d}
+}
+:root[data-theme="dark"]{--bg:#0f1c19;--panel:#172723;--ink:#e6efe9;--muted:#93a8a0;--line:#274039;--side:#0a1412;--side-ink:#b9cfc5;--blue:#6aa3d6;--green:#4fc08a;--red:#ef7b6d}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+
+/* sidebar */
+.side{background:var(--side);color:var(--side-ink);padding:28px 18px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;color:#fff}
+.brand i{width:30px;height:30px;border-radius:50% 50% 50% 8px;background:var(--accent);display:block}
+.side nav{display:flex;flex-direction:column;gap:4px}
+.side nav a{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;text-decoration:none;font-weight:600}
+.side nav a:hover{background:rgba(255,255,255,.08)}
+.side nav a[aria-current]{background:var(--accent);color:#17302b}
+.side nav small{background:rgba(255,255,255,.14);border-radius:99px;padding:0 8px;font-size:.75rem}
+.side nav a[aria-current] small{background:rgba(23,48,43,.2)}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;font-size:.9rem}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
+.me span{display:block;color:#fff;font-weight:600;line-height:1.2}
+
+/* main */
+main{padding:32px clamp(16px,3vw,40px) 48px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+h1{margin:0;font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.top p{margin:4px 0 0;color:var(--muted)}
+.range{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.range a{padding:6px 14px;border-radius:7px;text-decoration:none;font-weight:600;font-size:.9rem;color:var(--muted)}
+.range a[aria-current]{background:var(--ink);color:var(--bg)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel h2{margin:0 0 2px;font-size:1.05rem;font-weight:600}
+.panel .sub{margin:0 0 16px;color:var(--muted);font-size:.88rem}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.stat{display:flex;flex-direction:column;gap:6px;justify-content:space-between}
+.stat .label{color:var(--muted);font-size:.9rem;font-weight:600}
+.stat .num{font-size:2rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.stat.hero{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stat.hero .label{color:inherit;opacity:.75}
+.stat.hero .num{font-size:3rem}
+.delta{font-size:.85rem;font-weight:600}
+.up{color:var(--green)} .down{color:var(--red)}
+.stat.hero .up{color:#7fe0ac}
+.spark{display:flex;align-items:flex-end;gap:3px;height:34px}
+.spark b{flex:1;background:var(--accent);border-radius:2px 2px 0 0}
+
+/* grid */
+.row{display:grid;gap:16px;margin-bottom:16px}
+.r1{grid-template-columns:2fr 1fr}
+.r2{grid-template-columns:1.6fr 1fr}
+
+/* bar chart */
+.chart{display:grid;grid-template-columns:40px 1fr;height:240px}
+.yaxis{display:flex;flex-direction:column-reverse;justify-content:space-between;color:var(--muted);font-size:.75rem;padding-bottom:22px}
+.plot{position:relative;display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;padding-bottom:22px;
+  background:repeating-linear-gradient(to top,var(--line) 0 1px,transparent 1px 25%);
+  background-size:100% calc(100% - 22px);background-repeat:no-repeat}
+.col{display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.col .bar{background:var(--blue);border-radius:4px 4px 0 0;height:var(--h);opacity:.85}
+.col.now .bar{background:var(--accent);opacity:1}
+.col span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:.72rem;color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-top:14px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+
+/* donut */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+.donut{width:170px;aspect-ratio:1;border-radius:50%;
+  background:conic-gradient(var(--blue) 0 46%,var(--accent) 46% 74%,var(--green) 74% 91%,var(--red) 91% 100%);
+  display:grid;place-items:center}
+.donut::after{content:"";width:62%;aspect-ratio:1;border-radius:50%;background:var(--panel);grid-area:1/1}
+.donut div{grid-area:1/1;z-index:1;text-align:center;line-height:1.1}
+.donut strong{display:block;font-size:1.5rem}
+.donut small{color:var(--muted)}
+.keys{list-style:none;margin:0;padding:0;width:100%;display:grid;gap:8px;font-size:.92rem}
+.keys li{display:flex;justify-content:space-between;align-items:center}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+
+/* table */
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px;font-size:.92rem}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:600}
+.paid{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.ship{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue)}
+.wait{background:color-mix(in srgb,var(--accent) 25%,transparent);color:#9a6a00}
+.fail{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wait{color:var(--accent)}}
+
+/* stock */
+.stock{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.stock li{display:grid;gap:6px}
+.stock .head{display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+.stock .head span{color:var(--muted);font-weight:400}
+.meter{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter b{display:block;height:100%;width:var(--w);background:var(--green);border-radius:99px}
+.meter.low b{background:var(--red)}
+.meter.mid b{background:var(--accent)}
+
+/* responsive */
+@media (max-width:1100px){.stats{grid-template-columns:1fr 1fr}.stat.hero{grid-column:1/-1}.r1,.r2{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;overflow-x:auto}
+  .side nav{flex-direction:row}
+  .side nav a{white-space:nowrap}.side nav small{display:none}
+  .me{display:none}
+  .chart{height:200px}
+}
+@media (max-width:480px){.stats{grid-template-columns:1fr}.plot{gap:4px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><i></i>Harbor Roasters</div>
+    <nav aria-label="Main">
+      <a href="#" aria-current="page">Overview</a>
+      <a href="#">Orders <small>24</small></a>
+      <a href="#">Products</a>
+      <a href="#">Customers</a>
+      <a href="#">Inventory <small>3</small></a>
+      <a href="#">Settings</a>
+    </nav>
+    <div class="me"><div class="avatar">AO</div><div><span>Ada Okafor</span>Store manager</div></div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <div>
+        <h1>Good morning, Ada</h1>
+        <p>Here is how the shop is doing this week.</p>
+      </div>
+      <nav class="range" aria-label="Date range">
+        <a href="#">Today</a><a href="#" aria-current="true">7 days</a><a href="#">30 days</a><a href="#">Year</a>
+      </nav>
+    </header>
+
+    <section class="stats" aria-label="Key numbers">
+      <article class="panel stat hero">
+        <span class="label">Revenue this week</span>
+        <span class="num">$18,420</span>
+        <span class="delta up">+12.4% from last week</span>
+        <div class="spark" aria-hidden="true">
+          <b style="height:40%"></b><b style="height:55%"></b><b style="height:35%"></b><b style="height:65%"></b><b style="height:50%"></b><b style="height:80%"></b><b style="height:100%"></b>
+        </div>
+      </article>
+      <article class="panel stat">
+        <span class="label">Orders</span>
+        <span class="num">642</span>
+        <span class="delta up">+8.1%</span>
+      </article>
+      <article class="panel stat">
+        <span class="label">Average order</span>
+        <span class="num">$28.70</span>
+        <span class="delta up">+3.9%</span>
+      </article>
+      <article class="panel stat">
+        <span class="label">Refund rate</span>
+        <span class="num">1.8%</span>
+        <span class="delta down">+0.4 points</span>
+      </article>
+    </section>
+
+    <section class="row r1">
+      <article class="panel">
+        <h2>Weekly revenue</h2>
+        <p class="sub">Last 12 weeks, in thousands of dollars</p>
+        <div class="chart" role="img" aria-label="Bar chart of weekly revenue rising from 9 to 18 thousand dollars over 12 weeks">
+          <div class="yaxis"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
+          <div class="plot">
+            <div class="col" style="--h:46%"><div class="bar"></div><span>W28</span></div>
+            <div class="col" style="--h:52%"><div class="bar"></div><span>W29</span></div>
+            <div class="col" style="--h:49%"><div class="bar"></div><span>W30</span></div>
+            <div class="col" style="--h:58%"><div class="bar"></div><span>W31</span></div>
+            <div class="col" style="--h:62%"><div class="bar"></div><span>W32</span></div>
+            <div class="col" style="--h:55%"><div class="bar"></div><span>W33</span></div>
+            <div class="col" style="--h:68%"><div class="bar"></div><span>W34</span></div>
+            <div class="col" style="--h:71%"><div class="bar"></div><span>W35</span></div>
+            <div class="col" style="--h:66%"><div class="bar"></div><span>W36</span></div>
+            <div class="col" style="--h:78%"><div class="bar"></div><span>W37</span></div>
+            <div class="col" style="--h:82%"><div class="bar"></div><span>W38</span></div>
+            <div class="col now" style="--h:92%"><div class="bar"></div><span>W39</span></div>
+          </div>
+        </div>
+        <div class="legend"><span><i style="background:var(--blue)"></i>Previous weeks</span><span><i style="background:var(--accent)"></i>This week</span></div>
+      </article>
+
+      <article class="panel">
+        <h2>Where orders come from</h2>
+        <p class="sub">Share of this week's orders</p>
+        <div class="donut-wrap">
+          <div class="donut" role="img" aria-label="Online shop 46%, subscriptions 28%, wholesale 17%, in store 9%">
+            <div><strong>642</strong><small>orders</small></div>
+          </div>
+          <ul class="keys">
+            <li><span><i style="background:var(--blue)"></i>Online shop</span><strong>46%</strong></li>
+            <li><span><i style="background:var(--accent)"></i>Subscriptions</span><strong>28%</strong></li>
+            <li><span><i style="background:var(--green)"></i>Wholesale</span><strong>17%</strong></li>
+            <li><span><i style="background:var(--red)"></i>In store pickup</span><strong>9%</strong></li>
+          </ul>
+        </div>
+      </article>
+    </section>
+
+    <section class="row r2">
+      <article class="panel">
+        <h2>Latest orders</h2>
+        <p class="sub">The five most recent</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Order</th><th>Customer</th><th>Item</th><th>Status</th><th class="r">Total</th></tr></thead>
+            <tbody>
+              <tr><td>#4821</td><td>Tunde Bello</td><td>Ethiopia Guji, 1 kg</td><td><span class="pill paid">Paid</span></td><td class="r">$42.00</td></tr>
+              <tr><td>#4820</td><td>Ngozi Eze</td><td>Monthly subscription</td><td><span class="pill ship">Shipped</span></td><td class="r">$36.50</td></tr>
+              <tr><td>#4819</td><td>Lagos Bean Co.</td><td>Wholesale, 10 kg</td><td><span class="pill wait">Pending</span></td><td class="r">$318.00</td></tr>
+              <tr><td>#4818</td><td>Sam Idowu</td><td>Brew kit</td><td><span class="pill paid">Paid</span></td><td class="r">$64.90</td></tr>
+              <tr><td>#4817</td><td>Maria Costa</td><td>Colombia Huila, 250 g</td><td><span class="pill fail">Payment failed</span></td><td class="r">$14.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Beans in stock</h2>
+        <p class="sub">Restock anything under 25%</p>
+        <ul class="stock">
+          <li><div class="head">Ethiopia Guji <span>82 kg</span></div><div class="meter"><b style="--w:82%"></b></div></li>
+          <li><div class="head">Brazil Cerrado <span>51 kg</span></div><div class="meter"><b style="--w:51%"></b></div></li>
+          <li><div class="head">Kenya AA <span>34 kg</span></div><div class="meter mid"><b style="--w:34%"></b></div></li>
+          <li><div class="head">Colombia Huila <span>12 kg</span></div><div class="meter low"><b style="--w:12%"></b></div></li>
+          <li><div class="head">Decaf Swiss Water <span>6 kg</span></div><div class="meter low"><b style="--w:6%"></b></div></li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</div>
+</body>
+</html>
